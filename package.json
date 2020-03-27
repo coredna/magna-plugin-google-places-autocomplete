@@ -1,0 +1,62 @@
+{
+  "name": "@coredna/magna-plugin-google-places-autocomplete",
+  "version": "1.0.0",
+  "description": "Magna is a tree based javascript router, plugin runner and ajax framework",
+  "main": "dist/magna-plugin-google-places-autocomplete.common.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "src"
+  },
+  "files": [
+    "dist",
+    "src",
+    "readme.md",
+    "LICENSE",
+    "changelog.md"
+  ],
+  "scripts": {
+    "test": "jest",
+    "build": "cross-env NODE_ENV=production rollup -c",
+    "dev": "cross-env NODE_ENV=production rollup -c -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coredna/magna-plugin-google-places-autocomplete.git"
+  },
+  "keywords": [
+    "magna",
+    "javascript",
+    "router",
+    "ajax"
+  ],
+  "author": "Andrew Fountain",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/coredna/magna-plugin-google-places-autocomplete/issues"
+  },
+  "homepage": "https://github.com/coredna/magna-plugin-google-places-autocomplete#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@coredna/magna": "^2.2.0",
+    "jquery": "^3.4.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-proposal-private-methods": "^7.8.3",
+    "@babel/preset-env": "^7.9.0",
+    "@rollup/plugin-commonjs": "^11.0.2",
+    "@rollup/plugin-node-resolve": "^7.1.1",
+    "@rollup/plugin-replace": "^2.3.1",
+    "cross-env": "^7.0.2",
+    "jest": "^25.1.0",
+    "query-string": "^6.11.1",
+    "rambda": "^5.0.0",
+    "rollup": "^2.1.0",
+    "rollup-plugin-babel": "^4.4.0",
+    "rollup-plugin-cleanup": "^3.1.1",
+    "rollup-plugin-terser": "^5.3.0"
+  }
+}
