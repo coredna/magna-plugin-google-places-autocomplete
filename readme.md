@@ -35,7 +35,7 @@ yarn add @coredna/magna-plugin-google-places-autocomplete
 |---       |---    |---      |---       |---         |
 | API_KEY | string | `null` | true | Google places API KEY
 | country | string | `'US'` | false | Country code, can specify multiple with comma separation `'US,AU'` |
-| fields | Array<Field> | `{}` | false | Object of fields containing key, selector and type see [Fields](#fields)
+| fields | object | `{}` | false | Object of fields containing key, selector and type see [Fields](#fields)
 
 ## Fields
 You can set your own fields you can use any of:
@@ -46,8 +46,8 @@ You can set your own fields you can use any of:
 | unit | object | `{ selector: '[name="address2"]', type: 'long_name' }` | false | Unit number "address_line2" eg. `'Unit 1'` |
 | city | object | `{ selector: '[name="city"]', type: 'long_name' }` | false | Nearest city (suburb) eg. `'Windsor'` |
 | postcode | object | `{ selector: '[name="postcode"]', type: 'long_name' }` | false | Postal code (Zip code) eg. `'3182'` |
-| state | object | `{ selector: '[name="state"]', type: 'long_name' }` | false | State eg. `'VIC|Victoria'` |
-| country | object | `{ selector: '[name="countryid"]', type: 'long_name' }` | false | Country eg. `'AU|Australia'` |
+| state | object | `{ selector: '[name="state"]', type: 'long_name' }` | false | State eg. `'VIC'` `'Victoria'` |
+| country | object | `{ selector: '[name="countryid"]', type: 'long_name' }` | false | Country eg. `'AU'` `'Australia'`|
 
 | type | description |
 |---   |---    |
