@@ -38,8 +38,6 @@ export default class GooglePlacesAutocomplete extends Plugin {
 
   constructor(config) {
     super(config);
-    if (!this.config.API_KEY)
-      throw new Error('missing google places API_KEY from config')
   }
 
 
@@ -49,6 +47,8 @@ export default class GooglePlacesAutocomplete extends Plugin {
 
 
   init({ request, config }) {
+    if (!this.config.API_KEY)
+      throw new Error('missing google places API_KEY from GooglePlacesAutocomplete config')
     this._state.subscribe('fields', this.config.updateFields || this.updateFields)
   }
 

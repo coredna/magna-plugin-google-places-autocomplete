@@ -1,5 +1,5 @@
 /**
- * Magna Plugin: Google Places Autocomplete v1.0.0 (https://github.com/coredna/magna)
+ * Magna Plugin: Google Places Autocomplete v1.0.1 (https://github.com/coredna/magna)
  * Copywrite 2020 Andrew Fountain
  * Released under the MIT license 
  */
@@ -350,7 +350,6 @@ var GooglePlacesAutocomplete = /*#__PURE__*/function (_Plugin) {
       }
     });
 
-    if (!_this.config.API_KEY) throw new Error('missing google places API_KEY from config');
     return _this;
   }
 
@@ -368,6 +367,7 @@ var GooglePlacesAutocomplete = /*#__PURE__*/function (_Plugin) {
     value: function init(_ref6) {
       var request = _ref6.request,
           config = _ref6.config;
+      if (!this.config.API_KEY) throw new Error('missing google places API_KEY from GooglePlacesAutocomplete config');
 
       this._state.subscribe('fields', this.config.updateFields || this.updateFields);
     }

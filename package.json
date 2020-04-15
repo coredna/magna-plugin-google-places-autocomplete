@@ -1,6 +1,6 @@
 {
   "name": "@coredna/magna-plugin-google-places-autocomplete",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "description": "Magna is a tree based javascript router, plugin runner and ajax framework",
   "main": "dist/magna-plugin-google-places-autocomplete.common.js",
   "directories": {
