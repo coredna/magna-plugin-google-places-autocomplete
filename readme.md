@@ -36,6 +36,7 @@ yarn add @coredna/magna-plugin-google-places-autocomplete
 | API_KEY | string | `null` | true | Google places API KEY
 | country | string | `'US'` | false | Country code, can specify multiple with comma separation `'US,AU'` |
 | fields | object | `{}` | false | Object of fields containing key, selector and type see [Fields](#fields)
+| onPlaceChanged | `Function` | null | false | Run a callback when the address has been retrieved from google, cancel default actions by returning false [Extend default fields](#extend_default_fields) |
 
 ## Fields
 You can set your own fields you can use any of:
@@ -122,7 +123,12 @@ You are able to hook into the google places api event `onPlaceChange`, and assig
 ```javascript
 const { address, country } = GooglePlacesAutocomplete.defaultFields
 new GooglePlacesAutocomplete({
-  onPlaceChange(place) {
+  onPlaceChange({ 
+    place, 
+    addressComponentObject, 
+    address, 
+    fields 
+  }) {
     // do something with the place object
     return false // if you return false it will cancel the default behaviour
   },

@@ -26,6 +26,7 @@ export default class GooglePlacesAutocomplete extends Plugin {
   // Create the default fields without a prefix
   static defaultFields = GooglePlacesAutocomplete.prefixDefaultFields('')
 
+
   static defaultConfig = {
     API_KEY: '',
     country: 'US',
@@ -34,38 +35,44 @@ export default class GooglePlacesAutocomplete extends Plugin {
     selector: '#google-autocomplete',
   }
 
+
   constructor(config) {
     super(config);
     if (!this.config.API_KEY)
       throw new Error('missing google places API_KEY from config')
   }
 
+
   initPromise({ request }) {
     return this.#loadPlacesApi({ request, config: this.config })
   }
+
 
   init({ request, config }) {
     this._state.subscribe('fields', this.config.updateFields || this.updateFields)
   }
 
 
-  #reduceAddressComponents = (addressComponents, accumulator = {}) => {
-    // loop through  all the components in the componentForm object
-    Object.keys(componentForm).forEach(key => {
-      const component = componentForm[key]
-      const field = this.config.fields[component.name]
-      if (!field) return
-      // loop through each address item to find the value we are looking for
-      for (let ii = 0; ii < addressComponents.length; ii++) {
-        const addressItem = addressComponents[ii]
-        // if we find an addressItem with a matching type use it to set the field
-        if (addressItem.types.includes(key)) {
-          accumulator[component.name] = addressItem[field.type || component.type]
-        }
+  #reduceAddressComponents = (addressComponents, accumulator = {}) =>
+    // key the address components by their first declared type
+    addressComponents.reduce((acc, x) => ({
+      ...acc,
+      [x.types[0]]: {
+        long_name: x.long_name,
+        short_name: x.short_name,
       }
-    })
-    return accumulator
-  }
+    }), {})
+
+
+  #normalizeAddressComponents = addressObj =>
+    // loop through componentForm attempting to fill in each `name` in the fields object using the `key` for the address object above
+    componentForm.reduce((acc, { key, type, name }) => ({
+      ...acc,
+      ...(typeof acc[name] === 'undefined' && {
+        [name]: addressObj[key]
+      })
+    }), {})
+
 
   #initializeAutocomplete() {
     // don't initialize the autocomplete on localhost as the google api key will fail
@@ -85,29 +92,41 @@ export default class GooglePlacesAutocomplete extends Plugin {
   }
 
   onPlaceChanged = () => {
-    const place = this.autocomplete.getPlace();
-    // allow access to the place from the configuration
-    if (typeof this.config.onPlaceChanged === 'function') {
-      const result = this.config.onPlaceChanged.call(this, place)
-      // allow overriding the default behavior by returning false
-      if (result === false) {
-        return
-      }
-    }
-    const addressComponents = place.address_components
-    const fields = this.#reduceAddressComponents(addressComponents)
     const value = this.$input.val()
     // the street address that is returned from google generally misses unit numbers
     // we will grab everything before the first comma to set the street address
     const address = value.substr(0, value.indexOf(','))
 
-    this._state.setState('fields', _ => ({
-      ...fields,
-      address,
-    }))
+    const place = this.autocomplete.getPlace();
+    const addressComponents = place.address_components
+    const addressComponentObject = this.#reduceAddressComponents(addressComponents)
+    const normalized = this.#normalizeAddressComponents(addressComponentObject)
+    // take the normalized field values, using the type specified in the `fields` object
+    const fields = Object.keys(this.config.fields).reduce((acc, key) => ({
+      ...acc,
+      ...(typeof normalized[key] !== 'undefined' && {
+        [key]: normalized[key][this.config.fields[key].type]
+      }),
+    }), { address })
+    // allow access to the place from the configuration
+    if (typeof this.config.onPlaceChanged === 'function') {
+      const result = this.config.onPlaceChanged.call(this, {
+        place,
+        addressComponentObject,
+        address: normalized,
+        fields
+      })
+      // allow overriding the default behavior by returning false
+      if (result === false) {
+        return
+      }
+    }
+
+    this._state.setState('fields', _ => fields)
     // the original google address response is saved incase there are any issues
     this._state.addressComponents = addressComponents
   }
+
 
   updateFields = values => {
     Object.keys(this.config.fields).forEach(key => {
@@ -135,6 +154,7 @@ export default class GooglePlacesAutocomplete extends Plugin {
     document.head.appendChild(script)
   })
 
+
   #disableEnter = e => {
     if (e.keyCode === 13) {
       e.preventDefault()
@@ -145,51 +165,27 @@ export default class GooglePlacesAutocomplete extends Plugin {
 }
 /*
  * this will attempt to find the most relevant piece of information from the google response
- * we will loop through each key until we find one that matches
+ * to normalize the names to more closely match core dna. we will loop through each key until we find one that matches
  * */
-const componentForm = {
-  street_number: {
-    type: 'short_name',
-    name: 'street_number',
-  },
-  route: {
-    type: 'short_name',
-    name: 'street',
-  },
-  colloquial_area: {
-    type: 'long_name',
-    name: 'city',
-  },
-  postal_town: {
-    type: 'short_name',
-    name: 'city',
-  },
-  neighborhood: {
-    type: 'long_name',
-    name: 'city',
-  },
-  sublocality: {
-    type: 'long_name',
-    name: 'city',
-  },
-  locality: {
-    type: 'long_name',
-    name: 'city',
-  },
-  postal_code_prefix: {
-    type: 'short_name',
-    name: 'postcode',
-  },
-  postal_code: {
-    type: 'short_name',
-    name: 'postcode',
-  },
-  administrative_area_level_1: {
-    type: 'short_name',
-    name: 'state',
-  },
-  country: {
-    type: 'short_name',
-    name: 'countryId'
-  }
-}
+
+/**
+ *
+ * @param {String}  name  name of the normalized key
+ * @param {Array<String>}  order  order of lookup for the google address component type, higher index means higher precedence
+ * @returns {key, name}
+ */
+const createComponentLookup = (name, order) =>
+  order.map(key => ({
+    key,
+    name
+  }))
+
+const componentForm = [
+  ...createComponentLookup('street_number', ['street_number']),
+  ...createComponentLookup('street', ['street']),
+  ...createComponentLookup('city', ['locality', 'sublocality', 'neighborhood', 'postal_town', 'colloquial_area']),
+  ...createComponentLookup('suburb', ['postal_town', 'neighborhood', 'colloquial_area', 'locality', 'sublocality']),
+  ...createComponentLookup('postcode', ['postal_code', 'postal_code_prefix']),
+  ...createComponentLookup('state', ['administrative_area_level_1', 'administrative_area_level_2']),
+  ...createComponentLookup('country', ['country']),
+]

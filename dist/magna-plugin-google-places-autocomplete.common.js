@@ -160,6 +160,39 @@ function _createSuper(Derived) {
   };
 }
 
+function _toConsumableArray(arr) {
+  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
+}
+
+function _arrayWithoutHoles(arr) {
+  if (Array.isArray(arr)) return _arrayLikeToArray(arr);
+}
+
+function _iterableToArray(iter) {
+  if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+}
+
+function _unsupportedIterableToArray(o, minLen) {
+  if (!o) return;
+  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+  var n = Object.prototype.toString.call(o).slice(8, -1);
+  if (n === "Object" && o.constructor) n = o.constructor.name;
+  if (n === "Map" || n === "Set") return Array.from(n);
+  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
+}
+
+function _arrayLikeToArray(arr, len) {
+  if (len == null || len > arr.length) len = arr.length;
+
+  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+
+  return arr2;
+}
+
+function _nonIterableSpread() {
+  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+
 function _classPrivateFieldGet(receiver, privateMap) {
   var descriptor = privateMap.get(receiver);
 
@@ -208,47 +241,61 @@ var GooglePlacesAutocomplete = /*#__PURE__*/function (_Plugin) {
     _reduceAddressComponents.set(_assertThisInitialized(_this), {
       writable: true,
       value: function value(addressComponents) {
-        var accumulator = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-        Object.keys(componentForm).forEach(function (key) {
-          var component = componentForm[key];
-          var field = _this.config.fields[component.name];
-          if (!field) return;
+        return addressComponents.reduce(function (acc, x) {
+          return _objectSpread2({}, acc, _defineProperty({}, x.types[0], {
+            long_name: x.long_name,
+            short_name: x.short_name
+          }));
+        }, {});
+      }
+    });
 
-          for (var ii = 0; ii < addressComponents.length; ii++) {
-            var addressItem = addressComponents[ii];
-
-            if (addressItem.types.includes(key)) {
-              accumulator[component.name] = addressItem[field.type || component.type];
-            }
-          }
-        });
-        return accumulator;
+    _normalizeAddressComponents.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: function value(addressObj) {
+        return componentForm.reduce(function (acc, _ref) {
+          var key = _ref.key,
+              type = _ref.type,
+              name = _ref.name;
+          return _objectSpread2({}, acc, {}, typeof acc[name] === 'undefined' && _defineProperty({}, name, addressObj[key]));
+        }, {});
       }
     });
 
     _defineProperty(_assertThisInitialized(_this), "onPlaceChanged", function () {
+      var value = _this.$input.val();
+
+      var address = value.substr(0, value.indexOf(','));
+
       var place = _this.autocomplete.getPlace();
 
+      var addressComponents = place.address_components;
+
+      var addressComponentObject = _classPrivateFieldGet(_assertThisInitialized(_this), _reduceAddressComponents).call(_assertThisInitialized(_this), addressComponents);
+
+      var normalized = _classPrivateFieldGet(_assertThisInitialized(_this), _normalizeAddressComponents).call(_assertThisInitialized(_this), addressComponentObject);
+
+      var fields = Object.keys(_this.config.fields).reduce(function (acc, key) {
+        return _objectSpread2({}, acc, {}, typeof normalized[key] !== 'undefined' && _defineProperty({}, key, normalized[key][_this.config.fields[key].type]));
+      }, {
+        address: address
+      });
+
       if (typeof _this.config.onPlaceChanged === 'function') {
-        var result = _this.config.onPlaceChanged.call(_assertThisInitialized(_this), place);
+        var result = _this.config.onPlaceChanged.call(_assertThisInitialized(_this), {
+          place: place,
+          addressComponentObject: addressComponentObject,
+          address: normalized,
+          fields: fields
+        });
 
         if (result === false) {
           return;
         }
       }
 
-      var addressComponents = place.address_components;
-
-      var fields = _classPrivateFieldGet(_assertThisInitialized(_this), _reduceAddressComponents).call(_assertThisInitialized(_this), addressComponents);
-
-      var value = _this.$input.val();
-
-      var address = value.substr(0, value.indexOf(','));
-
       _this._state.setState('fields', function (_) {
-        return _objectSpread2({}, fields, {
-          address: address
-        });
+        return fields;
       });
 
       _this._state.addressComponents = addressComponents;
@@ -263,8 +310,8 @@ var GooglePlacesAutocomplete = /*#__PURE__*/function (_Plugin) {
 
     _loadPlacesApi.set(_assertThisInitialized(_this), {
       writable: true,
-      value: function value(_ref) {
-        var config = _ref.config;
+      value: function value(_ref4) {
+        var config = _ref4.config;
         return new Promise(function (res, rej) {
           var _window, _window$google;
 
@@ -315,8 +362,8 @@ var GooglePlacesAutocomplete = /*#__PURE__*/function (_Plugin) {
 
   _createClass(GooglePlacesAutocomplete, [{
     key: "initPromise",
-    value: function initPromise(_ref2) {
-      var request = _ref2.request;
+    value: function initPromise(_ref5) {
+      var request = _ref5.request;
       return _classPrivateFieldGet(this, _loadPlacesApi).call(this, {
         request: request,
         config: this.config
@@ -324,9 +371,9 @@ var GooglePlacesAutocomplete = /*#__PURE__*/function (_Plugin) {
     }
   }, {
     key: "init",
-    value: function init(_ref3) {
-      var request = _ref3.request,
-          config = _ref3.config;
+    value: function init(_ref6) {
+      var request = _ref6.request,
+          config = _ref6.config;
 
       this._state.subscribe('fields', this.config.updateFields || this.updateFields);
     }
@@ -336,6 +383,8 @@ var GooglePlacesAutocomplete = /*#__PURE__*/function (_Plugin) {
 }(magna.Plugin);
 
 var _reduceAddressComponents = new WeakMap();
+
+var _normalizeAddressComponents = new WeakMap();
 
 var _initializeAutocomplete = new WeakSet();
 
@@ -394,52 +443,17 @@ var _initializeAutocomplete2 = function _initializeAutocomplete2() {
   this.autocomplete.addListener('place_changed', this.onPlaceChanged);
   this.$input.on('keydown keyup keypress', _classPrivateFieldGet(this, _disableEnter));
 };
-var componentForm = {
-  street_number: {
-    type: 'short_name',
-    name: 'street_number'
-  },
-  route: {
-    type: 'short_name',
-    name: 'street'
-  },
-  colloquial_area: {
-    type: 'long_name',
-    name: 'city'
-  },
-  postal_town: {
-    type: 'short_name',
-    name: 'city'
-  },
-  neighborhood: {
-    type: 'long_name',
-    name: 'city'
-  },
-  sublocality: {
-    type: 'long_name',
-    name: 'city'
-  },
-  locality: {
-    type: 'long_name',
-    name: 'city'
-  },
-  postal_code_prefix: {
-    type: 'short_name',
-    name: 'postcode'
-  },
-  postal_code: {
-    type: 'short_name',
-    name: 'postcode'
-  },
-  administrative_area_level_1: {
-    type: 'short_name',
-    name: 'state'
-  },
-  country: {
-    type: 'short_name',
-    name: 'countryId'
-  }
+
+var createComponentLookup = function createComponentLookup(name, order) {
+  return order.map(function (key) {
+    return {
+      key: key,
+      name: name
+    };
+  });
 };
+
+var componentForm = [].concat(_toConsumableArray(createComponentLookup('street_number', ['street_number'])), _toConsumableArray(createComponentLookup('street', ['street'])), _toConsumableArray(createComponentLookup('city', ['locality', 'sublocality', 'neighborhood', 'postal_town', 'colloquial_area'])), _toConsumableArray(createComponentLookup('suburb', ['postal_town', 'neighborhood', 'colloquial_area', 'locality', 'sublocality'])), _toConsumableArray(createComponentLookup('postcode', ['postal_code', 'postal_code_prefix'])), _toConsumableArray(createComponentLookup('state', ['administrative_area_level_1', 'administrative_area_level_2'])), _toConsumableArray(createComponentLookup('country', ['country'])));
 
 exports.default = GooglePlacesAutocomplete;
 //# sourceMappingURL=magna-plugin-google-places-autocomplete.common.js.map
